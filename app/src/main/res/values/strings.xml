@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">AGIL Mesh</string>
+    <string name="brand_logo_description">AGIL Mesh logo</string>
+    <string name="eyebrow">DEVICE SEARCH</string>
+    <string name="screen_title">Mesh Device Search</string>
+    <string name="intro">Discover and identify mesh radios on your active local network.</string>
+    <string name="discovery_settings">Device discovery</string>
+    <string name="discovery_settings_help">Select the network connected to your mesh radios.</string>
+    <string name="network_interface">Network interface</string>
+    <string name="refresh_interfaces">Refresh interfaces</string>
+    <string name="search">Scan for devices</string>
+    <string name="stop">Stop scan</string>
+    <string name="scan_status">SCAN STATUS</string>
+    <string name="devices_found">DISCOVERED DEVICES</string>
+    <string name="devices_found_count">DISCOVERED DEVICES · %1$d</string>
+    <string name="no_devices">No mesh devices found yet. Start a scan to discover radios on this network.</string>
+    <string name="ip_address">IP ADDRESS</string><string name="subnet_mask">SUBNET MASK</string>
+    <string name="open_device_in_browser">Open device %1$s in web browser</string>
+    <string name="no_web_browser">No web browser is available</string>
+    <string name="open_web_interface">Open in browser</string>
+    <string name="web_management">Web Management</string>
+    <string name="web_status_unknown">Web access status is unknown.</string>
+    <string name="web_enable">Enable</string>
+    <string name="web_disable">Disable</string>
+    <string name="web_get">Refresh status</string>
+    <string name="web_apply">Apply change</string>
+    <string name="web_management_help">Use the switch to choose whether this device allows web access, then apply the change.</string>
+    <string name="web_request_pending">Waiting for device…</string>
+    <string name="web_status_enabled">Web access is enabled.</string>
+    <string name="web_status_disabled">Web access is disabled.</string>
+    <string name="web_post_accepted">Change accepted. Refresh status to confirm.</string>
+    <string name="web_request_failed">Request failed: %1$s</string>
+</resources>

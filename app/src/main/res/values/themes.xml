@@ -1,0 +1,12 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.MeshDeviceSearch" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/mesh_cyan</item>
+        <item name="colorPrimaryVariant">@color/mesh_cyan_dark</item>
+        <item name="colorOnPrimary">@color/mesh_input</item>
+        <item name="colorSecondary">@color/mesh_cyan</item>
+        <item name="colorSurface">@color/mesh_panel</item><item name="colorOnSurface">@color/mesh_text</item>
+        <item name="android:fontFamily">sans</item><item name="android:windowBackground">@color/mesh_page</item>
+        <item name="android:statusBarColor">@color/mesh_panel</item><item name="android:navigationBarColor">@color/mesh_panel</item>
+        <item name="android:windowLightStatusBar">false</item><item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+    </style>
+</resources>

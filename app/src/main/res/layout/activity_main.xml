@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/mainScroll"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/mesh_page"
+    android:clipToPadding="true" android:fillViewport="true">
+    <LinearLayout android:id="@+id/screenContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+        android:layout_gravity="center_horizontal"
+        android:padding="@dimen/screen_padding" android:paddingBottom="32dp">
+        <LinearLayout android:id="@+id/brandHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_mesh_header"
+            android:orientation="vertical" android:padding="16dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                <ImageView android:layout_width="40dp" android:layout_height="40dp" android:contentDescription="@string/brand_logo_description"
+                    android:src="@drawable/ic_agil_mesh" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="sans-serif-medium"
+                        android:text="@string/app_name" android:textColor="@color/mesh_text" android:textSize="20sp" android:textStyle="bold" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp"
+                        android:fontFamily="sans-serif-medium" android:letterSpacing="0.12" android:text="@string/eyebrow"
+                        android:textColor="@color/mesh_cyan" android:textSize="10sp" />
+                </LinearLayout>
+            </LinearLayout>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                android:fontFamily="sans-serif-medium" android:text="@string/screen_title" android:textColor="@color/mesh_text" android:textSize="20sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
+                android:lineSpacingExtra="2dp" android:text="@string/intro" android:textColor="@color/mesh_muted" android:textSize="14sp" />
+        </LinearLayout>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/discoveryPanel" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" app:cardBackgroundColor="@color/mesh_panel" app:cardCornerRadius="@dimen/card_radius"
+            app:cardElevation="0dp" app:strokeColor="@color/mesh_border" app:strokeWidth="1dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.08" android:text="@string/discovery_settings" android:textColor="@color/mesh_text" android:textSize="12sp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
+                    android:text="@string/discovery_settings_help" android:textColor="@color/mesh_muted" android:textSize="13sp" />
+                <com.google.android.material.textfield.TextInputLayout android:id="@+id/interfaceLayout"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="14dp" android:hint="@string/network_interface"
+                    app:boxBackgroundColor="@color/mesh_input" app:boxCornerRadiusBottomEnd="9dp" app:boxCornerRadiusBottomStart="9dp"
+                    app:boxCornerRadiusTopEnd="9dp" app:boxCornerRadiusTopStart="9dp" app:boxStrokeColor="@color/mesh_cyan" app:hintTextColor="@color/mesh_muted">
+                    <AutoCompleteTextView android:id="@+id/interfaceInput" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:dropDownVerticalOffset="4dp" android:inputType="none" android:popupBackground="@drawable/bg_mesh_dropdown"
+                        android:popupElevation="12dp" android:minHeight="56dp" android:cursorVisible="false"
+                        android:paddingTop="8dp" android:paddingBottom="8dp" android:textColor="@color/mesh_text" android:textSize="16sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.button.MaterialButton android:id="@+id/refreshInterfacesButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_gravity="end" android:layout_marginTop="4dp" android:minHeight="48dp"
+                    android:text="@string/refresh_interfaces" android:textAllCaps="false"
+                    android:textColor="@color/mesh_cyan" app:strokeColor="@color/mesh_border"
+                    app:icon="@drawable/ic_action_refresh" app:iconTint="@color/mesh_cyan" app:iconGravity="textStart" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:orientation="horizontal">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/searchButton" android:layout_width="0dp" android:layout_height="48dp"
+                        android:layout_weight="1" android:text="@string/search" android:textAllCaps="false" android:textColor="@color/mesh_input"
+                        app:backgroundTint="@color/mesh_cyan" app:cornerRadius="10dp" app:icon="@drawable/ic_action_scan"
+                        app:iconTint="@color/mesh_input" app:iconGravity="textStart" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/stopButton" style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:enabled="false" android:visibility="gone"
+                        android:text="@string/stop" android:textAllCaps="false" android:textColor="@color/mesh_cyan"
+                        app:cornerRadius="10dp" app:strokeColor="@color/mesh_border" app:icon="@drawable/ic_action_stop"
+                        app:iconTint="@color/mesh_cyan" app:iconGravity="textStart" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <LinearLayout android:id="@+id/statusPanel" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
+            android:background="@drawable/bg_mesh_card" android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp">
+            <View android:id="@+id/statusDot" android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/bg_status_dot" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.08" android:text="@string/scan_status" android:textColor="@color/mesh_muted" android:textSize="10sp" />
+                <TextView android:id="@+id/statusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                    android:text="Ready" android:textColor="@color/mesh_text" android:textSize="14sp" />
+            </LinearLayout>
+            <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/searchProgress" android:layout_width="24dp"
+                android:layout_height="24dp" android:visibility="gone" app:indicatorColor="@color/mesh_cyan" app:indicatorSize="24dp" app:trackThickness="2dp" />
+        </LinearLayout>
+        <TextView android:id="@+id/devicesHeader" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:layout_marginTop="22dp"
+            android:fontFamily="sans-serif-medium" android:letterSpacing="0.08" android:text="@string/devices_found" android:textColor="@color/mesh_muted" android:textSize="11sp" />
+        <LinearLayout android:id="@+id/resultsContainer" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:orientation="vertical">
+            <TextView android:id="@+id/resultsText" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_mesh_card"
+                android:gravity="center" android:lineSpacingExtra="2dp" android:minHeight="88dp" android:padding="18dp" android:text="@string/no_devices"
+                android:textColor="@color/mesh_muted" android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

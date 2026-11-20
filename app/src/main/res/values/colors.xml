@@ -1,0 +1,10 @@
+<resources>
+    <color name="mesh_page">#1F242C</color><color name="mesh_panel">#171C24</color>
+    <color name="mesh_card">#242A34</color><color name="mesh_input">#111722</color>
+    <color name="mesh_cyan">#48B9D3</color><color name="mesh_cyan_dark">#0A3440</color>
+    <color name="mesh_border">#466D82</color><color name="mesh_text">#F4F8FB</color>
+    <color name="mesh_muted">#9BA9BC</color><color name="mesh_success">#22D86F</color>
+    <color name="mesh_warning">#F2B84B</color><color name="mesh_error">#FF5D73</color>
+    <color name="mesh_cyan_ripple">#3348B9D3</color>
+    <color name="mesh_brand_red">#FF1738</color>
+</resources>
