@@ -7,15 +7,19 @@ import android.net.Uri
 import android.os.Bundle
 import android.graphics.Typeface
 import android.graphics.Color
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
@@ -30,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -195,10 +200,251 @@ class MainActivity : AppCompatActivity() {
                     contentDescription = getString(R.string.open_device_in_browser, device.ipAddress)
                     setOnClickListener { openDeviceInBrowser(device.ipAddress) }
                 })
+                addView(resultButton(R.string.view_topology, R.drawable.ic_action_topology).apply {
+                    setOnClickListener { showTopology(device) }
+                })
                 addView(webManagementControls(device))
             }
             card.addView(content)
             resultsContainer.addView(card)
+        }
+    }
+
+    private fun showTopology(device: DiscoveredDevice) {
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(12))
+        }
+        val status = TextView(this).apply {
+            setTextColor(getColor(R.color.mesh_text))
+            setText(R.string.topology_loading)
+        }
+        val details = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        var latest: NetworkTopology? = null
+        var selectedId: Int? = null
+        var telemetry: NodeTelemetry? = null
+        var telemetryJob: kotlinx.coroutines.Job? = null
+        var strongestFirst = false
+        var rendered: List<Any?>? = null
+
+        fun updateDetails() {
+            val topology = latest ?: return
+            val index = topology.nodes.indexOfFirst { it.id == selectedId }
+            val key = listOf(topology, selectedId, telemetry, strongestFirst)
+            if (rendered == key) return
+            rendered = key
+            details.removeAllViews()
+            if (index < 0) return
+            val node = topology.nodes[index]
+            fun LinearLayout.label(text: String, color: Int = R.color.mesh_text, bold: Boolean = false) {
+                addView(TextView(context).apply {
+                    this.text = text
+                    setTextColor(getColor(color))
+                    if (bold) setTypeface(typeface, Typeface.BOLD)
+                })
+            }
+            fun panel() = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setBackgroundResource(R.drawable.bg_mesh_card)
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+            }
+            val identity = panel()
+            identity.label(getString(R.string.node_information), R.color.mesh_cyan, true)
+            identity.label(node.name.ifBlank { telemetry?.name.orEmpty() }
+                .ifBlank { getString(R.string.node_number, node.id) }, bold = true)
+            identity.label(getString(R.string.topology_node, node.id, node.ip.ifBlank { "—" }), R.color.mesh_muted)
+            val metrics = listOf(
+                R.string.node_receive to telemetry?.rx?.let { getString(R.string.node_mbps, it) },
+                R.string.node_transmit to telemetry?.tx?.let { getString(R.string.node_mbps, it) },
+                R.string.node_temperature to telemetry?.temperature?.let { getString(R.string.node_celsius, it) },
+                R.string.node_resource_label to node.resource?.let { getString(R.string.node_percent, it.coerceIn(0.0, 1.0) * 100) },
+            )
+            fun addTiles(target: LinearLayout, values: List<Pair<Int, String?>>) {
+                values.chunked(2).forEach { cells ->
+                target.addView(LinearLayout(this).apply {
+                    isBaselineAligned = false
+                    cells.forEachIndexed { position, (title, value) ->
+                        addView(panel().apply {
+                            label(getString(title), R.color.mesh_muted)
+                            label(value ?: getString(R.string.node_unavailable), bold = true)
+                        }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f).apply {
+                            topMargin = dp(8)
+                            if (position > 0) marginStart = dp(8)
+                        })
+                    }
+                })
+                }
+            }
+            addTiles(identity, metrics)
+            details.addView(identity)
+            val links = topology.links.filter { it.from == index || it.to == index }
+                .groupBy { if (it.from == index) it.to else it.from }
+            val sorted = links.entries.sortedBy { (_, values) -> values.minOf { it.snr } }
+            details.label(getString(R.string.node_peer_count, links.size), bold = true)
+            if (links.size > 1) {
+                details.addView(resultButton(
+                    if (strongestFirst) R.string.node_sort_strong else R.string.node_sort_weak,
+                    R.drawable.ic_action_topology,
+                ).apply { setOnClickListener { strongestFirst = !strongestFirst; updateDetails() } })
+            }
+            (if (strongestFirst) sorted.asReversed() else sorted).forEach { (peerIndex, readings) ->
+                val peer = topology.nodes[peerIndex]
+                val card = panel()
+                card.label(peer.name.ifBlank { getString(R.string.node_number, peer.id) }, bold = true)
+                fun direction(label: Int, reading: TopologyLink?) {
+                    card.label(getString(label), R.color.mesh_muted)
+                    val snr = reading?.snr
+                    val band = when {
+                        snr == null -> R.string.node_no_link
+                        snr >= 27 -> R.string.node_excellent
+                        snr >= 13 -> R.string.node_good
+                        snr >= 8 -> R.string.node_average
+                        snr >= 3 -> R.string.node_fair
+                        else -> R.string.node_poor
+                    }
+                    card.label(if (snr == null) getString(band) else getString(R.string.node_snr, snr, getString(band)),
+                        if (snr == null) R.color.mesh_muted else R.color.mesh_cyan, true)
+                }
+                direction(R.string.node_incoming, readings.firstOrNull { it.to == index })
+                direction(R.string.node_outgoing, readings.firstOrNull { it.from == index })
+                val range = telemetry?.ranges?.get(peer.id) ?: when (device.ipAddress) {
+                    node.ip -> topology.sourceRanges[peer.id]
+                    peer.ip -> topology.sourceRanges[node.id]
+                    else -> null
+                }
+                card.label(getString(R.string.node_range, range?.let { getString(R.string.node_km, it) }
+                    ?: getString(R.string.node_unavailable)), R.color.mesh_muted)
+                details.addView(card, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+            }
+            val gps = panel()
+            gps.label(getString(R.string.node_gps_heading), bold = true)
+            val gpsStatus = when (telemetry?.gpsStatus) {
+                1 -> R.string.node_gps_locked
+                2 -> R.string.node_gps_warning
+                0 -> R.string.node_gps_inactive
+                else -> R.string.node_unavailable
+            }
+            val hasCoordinates = node.latitude != null && node.longitude != null &&
+                !(node.latitude == -90.0 && node.longitude == -180.0)
+            addTiles(gps, listOf(
+                R.string.node_gps_status to getString(gpsStatus),
+                R.string.node_latitude to node.latitude?.takeIf { hasCoordinates }?.let { getString(R.string.node_degrees, it) },
+                R.string.node_longitude to node.longitude?.takeIf { hasCoordinates }?.let { getString(R.string.node_degrees, it) },
+                R.string.node_altitude_label to node.altitude?.takeIf { hasCoordinates }?.let { getString(R.string.node_meters, it) },
+            ))
+            details.addView(gps, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        }
+
+        val graph = TopologyGraph(this, device.ipAddress).apply { visibility = View.GONE }
+        content.addView(status)
+        val configuration = resources.configuration
+        val wide = configuration.screenWidthDp >= 680
+        val graphHeight = (configuration.screenHeightDp * if (wide) 0.48f else 0.34f)
+            .toInt().coerceIn(130, 400)
+        val picker = resultButton(R.string.topology_pick_node, R.drawable.ic_action_topology).apply {
+            visibility = View.GONE
+        }
+        val detailScroll = ScrollView(this).apply {
+            isNestedScrollingEnabled = true
+            addView(details)
+        }
+        val inspector = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(picker)
+            addView(detailScroll, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                if (wide) dp((configuration.screenHeightDp - 156).coerceAtLeast(132))
+                else LinearLayout.LayoutParams.WRAP_CONTENT,
+            ))
+            visibility = View.GONE
+        }
+        if (wide) {
+            content.addView(LinearLayout(this).apply {
+                isBaselineAligned = false
+                addView(graph, LinearLayout.LayoutParams(0, dp(graphHeight), 1.2f))
+                addView(inspector, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = dp(12)
+                })
+            })
+        } else {
+            content.addView(graph, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(graphHeight)))
+            content.addView(inspector)
+        }
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.topology_title, device.ipAddress))
+            .setView(ScrollView(this).apply { addView(content) })
+            .setNegativeButton(R.string.topology_close, null)
+            .create()
+        fun selectNode(id: Int) {
+            telemetryJob?.cancel()
+            telemetry = null
+            selectedId = id
+            latest?.let { graph.update(it, id) }
+            updateDetails()
+            detailScroll.scrollTo(0, 0)
+            val node = latest?.nodes?.firstOrNull { it.id == id } ?: return
+            telemetryJob = lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    while (dialog.isShowing) {
+                        val current = latest?.nodes?.firstOrNull { it.id == id && it.ip == node.ip } ?: break
+                        try {
+                            telemetry = NetworkTopology.telemetry(
+                                device, current.copy(name = current.name.ifBlank { telemetry?.name.orEmpty() }),
+                            )
+                            updateDetails()
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (_: Exception) {
+                            // Leave unavailable readings visible.
+                        }
+                        kotlinx.coroutines.delay(1_000)
+                    }
+                }
+            }
+        }
+        graph.onNodeSelected = ::selectNode
+        picker.setOnClickListener {
+            val nodes = latest?.nodes.orEmpty().sortedBy { it.id }
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.topology_pick_node)
+                .setItems(nodes.map { getString(R.string.topology_node, it.id, it.ip) }.toTypedArray()) { _, index ->
+                    selectNode(nodes[index].id)
+                }.show()
+        }
+        dialog.show()
+        if (wide) {
+            dialog.window?.setLayout(dp((configuration.screenWidthDp - 40).coerceAtMost(960)),
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+        val job = lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (dialog.isShowing) {
+                    val started = android.os.SystemClock.elapsedRealtime()
+                    try {
+                        val topology = NetworkTopology.read(device)
+                        latest = topology
+                        graph.update(topology, selectedId)
+                        graph.visibility = if (topology.nodes.isEmpty()) View.GONE else View.VISIBLE
+                        picker.visibility = graph.visibility
+                        inspector.visibility = graph.visibility
+                        status.text = if (topology.nodes.isEmpty()) getString(R.string.topology_empty)
+                            else getString(R.string.topology_live_summary, topology.nodes.size, topology.links.size)
+                        updateDetails()
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        status.text = getString(
+                            if (latest == null) R.string.topology_failed else R.string.topology_stale,
+                            error.localizedMessage ?: error.javaClass.simpleName,
+                        )
+                    }
+                    kotlinx.coroutines.delay((1_000 - (android.os.SystemClock.elapsedRealtime() - started)).coerceAtLeast(0))
+                }
+            }
+        }
+        dialog.setOnDismissListener {
+            job.cancel()
+            telemetryJob?.cancel()
         }
     }
 
@@ -224,15 +470,21 @@ class MainActivity : AppCompatActivity() {
         val toggle = SwitchCompat(context).apply {
             contentDescription = getString(R.string.web_management)
             minimumHeight = dp(48)
-            switchMinWidth = dp(56)
-            thumbDrawable = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setSize(dp(26), dp(26))
-                setColor(Color.WHITE)
+            switchMinWidth = dp(60)
+            thumbDrawable = object : GradientDrawable() {
+                private val thumbPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+
+                override fun getIntrinsicWidth() = dp(32)
+                override fun getIntrinsicHeight() = dp(32)
+
+                override fun draw(canvas: Canvas) {
+                    val radius = (minOf(bounds.width(), bounds.height(), dp(32)) / 2f - dp(4)).coerceAtLeast(0f)
+                    canvas.drawCircle(bounds.exactCenterX(), bounds.exactCenterY(), radius, thumbPaint)
+                }
             }
             trackDrawable = GradientDrawable().apply {
-                setSize(dp(56), dp(34))
-                cornerRadius = dp(17).toFloat()
+                setSize(dp(64), dp(32))
+                cornerRadius = dp(16).toFloat()
             }
             trackTintList = ColorStateList(
                 arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf(android.R.attr.state_checked), intArrayOf()),

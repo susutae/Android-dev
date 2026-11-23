@@ -2,6 +2,8 @@
 
 Native Android app implementing the UDP device discovery protocol from `device search interface.docx`.
 
+See the [AGIL Mesh user guide](docs/user-guide.md) for installation, discovery, Web Management, and live topology.
+
 The app lets the user select an active IPv4 network interface and search on destination port 7000. Android automatically allocates the local UDP source port. It broadcasts:
 
 ```json
